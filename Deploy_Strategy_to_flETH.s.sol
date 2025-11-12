@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "forge-std/Script.sol";
-import "../src/Deploy_Strategy_to_flETH.sol";
+import "../src/Strategy_to_flETH.sol";
 
 contract DeployStrategyToFlETH is Script {
     function run() external {
