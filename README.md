@@ -30,9 +30,10 @@ A critical `state manipulation` vulnerability has been identified in the `flETH 
 ### Proof Transactions
 
 Example transactions demonstrating the vulnerability on Base mainnet:
-- Drain flETH: [Insert TX hash after execution]
-- Reverse flow: [Insert TX hash after execution]
-- Recursive attack: [Insert TX hash after execution]
+- flETH -> Strategy 1/3: [Insert TX hash after execution]
+- flETH -> Strategy 2/3: [Insert TX hash after execution]
+- flETH -> Strategy 3/3: [Insert TX hash after execution]
+- Strategy -> flETH 1/1: [Insert TX hash after execution]
 
 ---
 
