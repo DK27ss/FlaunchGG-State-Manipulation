@@ -134,6 +134,7 @@ After Attack:
 ## why no direct extraction ?
 
 **1:1 Ratio Maintained**: deposit(X) → mint X flETH → withdraw(X) → burn X flETH = `net zero`
+
 **Yield Protected**: `yieldAccumulated()` goes to protocol `yieldReceiver` (unchanged by attack)
 
 However, `DoS` & `no reentrancy guard` is still dangerous !
