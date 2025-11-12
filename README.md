@@ -4,20 +4,18 @@
 
 A critical `state manipulation` vulnerability has been identified in the `flETH protocol` that allows an attacker to **arbitrarily manipulate the ETH distribution** between the main `flETH` contract and its `AaveV3Strategy` using only a `flashloan`, **without depositing any real funds** into the protocol.
 
-### Key Impact
+### Impact
 
 **Impact**
 - **DoS**: Can drain flETH.balance to ~0.01 ETH, forcing all withdrawals through expensive Aave operations
 - **User Impact**: 6x increase in gas costs for withdrawals (~50k → 300k gas)
 - **Protocol Disruption**: Small withdrawals may fail due to insufficient direct balance
 - **Massive fund movement**: Can force 69 ETH → 0.01 ETH (or vice versa)
-- **Gas griefing**: Forces expensive Aave operations repeatedly
+- **Gas griefing**: Forces expensive operations repeatedly
 - **MEV opportunities**: Front-running legitimate transactions to force expensive execution paths
 
-**Important Note**:
+**Note**:
 - **Direct profit extraction is NOT possible** - The 1:1 flETH:ETH ratio is mathematically sound
-- **User funds are safe** - No way to steal deposited capital
-- **Protocol functionality severely impacted** - DoS attack degrades user experience significantly
 
 ---
 
@@ -38,7 +36,7 @@ Example transactions demonstrating the vulnerability on Base mainnet:
 
 ---
 
-## Technical Details
+## Details
 
 ### Vulnerability Root Cause
 
@@ -69,38 +67,27 @@ This rebalancing is triggered on every `deposit()` and `withdraw()` operation ba
 
 ---
 
-## Proof of Concept
-
-### Setup
-
-```bash
-# Clone repository
-git clone <repo>
-cd flaunchgg_tests
-
-# Install dependencies
-forge install
-
-# Set environment
-export PRIVATE_KEY=<your_key>
-export RPC_URL=<base_mainnet_rpc>
-```
+## PoC
 
 ### Execute Attack
 
 ```bash
-# Deploy and execute Vector 1 (Drain flETH)
-forge script script/DeployFlETHToStrategy.s.sol \
-  --rpc-url $RPC_URL \
-  --broadcast
+# Deploy and execute (flETH -> Strategy)
+forge script script/DeployFlETHToStrategy1.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+forge script script/DeployFlETHToStrategy2.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+forge script script/DeployFlETHToStrategy3.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+# Deploy and execute (Strategy -> flETH)
+
+forge script script/DeployFlETHToStrategy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
 # Verify state change
-cast call 0x000000000D564D5be76f7f0d28fE52605afC7Cf8 \
-  "balanceOf(address)" <flETH_address> \
-  --rpc-url $RPC_URL
+cast call 0x000000000D564D5be76f7f0d28fE52605afC7Cf8 "balanceOf(address)" 0x000000000D564D5be76f7f0d28fE52605afC7Cf8 --rpc-url $RPC_URL
 ```
 
-### Expected Results
+### Results
 
 ```
 Before Attack:
@@ -116,7 +103,7 @@ After Attack:
 
 ## Attack Impact
 
-**1. Denial of Service (DoS)** - PRIMARY THREAT
+**1. Denial of Service (DoS)**
 - Drains flETH.balance to ~0.01 ETH
 - Forces all withdrawals through Aave (50k → 300k gas)
 - Small withdrawals may fail due to insufficient balance
@@ -143,12 +130,12 @@ After Attack:
 
 ---
 
-## Why no direct Profit ?
+## why no direct extraction ?
 
 **1:1 Ratio Maintained**: deposit(X) → mint X flETH → withdraw(X) → burn X flETH = `net zero`
 **Yield Protected**: `yieldAccumulated()` goes to protocol `yieldReceiver` (unchanged by attack)
 
-However, **lack of profit ≠ low severity** - DoS attack is still dangerous !
+However, `DoS` & `no reentrancy guard` is still dangerous !
 
 ---
 
@@ -160,7 +147,7 @@ However, **lack of profit ≠ low severity** - DoS attack is still dangerous !
 
 ---
 
-#### Step 1: deposit(90.75 ETH) - Drain flETH to Strategy
+#### Step 1 - deposit(90.75 ETH) - Drain flETH to Strategy
 
 ```
 Attacker
@@ -184,13 +171,13 @@ flETH.sol (Line 71-82)
       └─ POOL.deposit() → Aave
 
 STATE AFTER:
-  flETH.balance: 78.775 ETH (at threshold)
+  flETH.balance: 78.775 ETH
   strategy.balance: 784.975 ETH
 ```
 
 ---
 
-#### Step 2: withdraw(90.75 flETH) - Pull from Strategy
+#### Step 2 - withdraw(90.75 flETH) - Pull from Strategy
 
 ```
 Attacker
@@ -201,13 +188,13 @@ flETH.sol (Line 105-164)
    ├─ _burn(90.75)
    ├─ totalSupply: 787.75 → 697 ETH
    ├─ PATH 1: Split transfer
-   ├─ _transferETH(attacker, 9.075) ← Direct
+   ├─ _transferETH(9.075) ← Direct
    │
-   │ withdrawETH(81.675, attacker)
+   │ withdrawETH(81.675)
    ▼
 Strategy.sol (Line 74-79)
    │
-   │ _withdrawFromAave(81.675, attacker)
+   │ _withdrawFromAave(81.675)
    │
    │ wethGateway.withdrawETH()
    ▼
@@ -218,7 +205,7 @@ Gateway.sol (Line 45-65)
 STATE AFTER:
   flETH.balance: 0.01 ETH <-- DRAINED!
   strategy.balance: 704 ETH
-  totalSupply: 697 ETH (unchanged)
+  totalSupply: 697 ETH
 ```
 
 ---
@@ -241,7 +228,7 @@ Deposit 90.75%: optimal threshold → final balance `69.7 ETH` (lower = better D
 ### Vulnerable Code: flETH.sol
 
 ```solidity
-// Line 87-100: Rebalance function (public, no access control)
+// Rebalance function (public, no access control)
 function rebalance() public override {
     if (address(strategy) == address(0) || strategy.isUnwinding()) return;
 
@@ -256,7 +243,7 @@ function rebalance() public override {
     }
 }
 
-// Line 71-82: Deposit automatically calls rebalance()
+// Deposit automatically calls rebalance()
 function deposit(uint wethAmount) external payable override {
     uint ethToDeposit = msg.value;
 
@@ -266,10 +253,10 @@ function deposit(uint wethAmount) external payable override {
         ethToDeposit += wethAmount;
     }
 
-    _mintFLETHAndRebalance(msg.sender, ethToDeposit); // <-- Auto-rebalance
+    _mintFLETHAndRebalance(msg.sender, ethToDeposit); // <-- Auto rebalance
 }
 
-// Line 226-229: Internal function that calls rebalance
+// Internal function that calls rebalance
 function _mintFLETHAndRebalance(address receiver, uint amount) internal {
     _mint(receiver, amount);
     rebalance(); // <-- Called on every deposit
@@ -320,7 +307,7 @@ function receiveFlashLoan(
 
 ## Recommended Fixes
 
-### Fix 1: Add ReentrancyGuard
+### Fix 1 - Add ReentrancyGuard
 
 **Impact**: Eliminates all reentrancy vectors
 
@@ -337,7 +324,7 @@ import {IFLETHStrategy} from '@fleth-interfaces/IFLETHStrategy.sol';
 import {IWETH} from '@fleth-interfaces/IWETH.sol';
 
 contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard { // ← ADD ReentrancyGuard
-    // ... existing state variables ...
+    // ...
 
     /**
      * Makes a deposit into the contract, taking ETH and/or WETH and returning flETH.
@@ -412,7 +399,7 @@ contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard { // ← ADD Reentranc
         }
     }
 
-    // ... rest of contract unchanged ...
+    // ...
 }
 ```
 
@@ -440,7 +427,7 @@ User calls withdraw() (sets lock)
 
 ---
 
-### Fix 2: Flash Loan Protection with Balance Tracking
+### Fix 2 - Flash Loan Protection with Balance Tracking
 
 **Impact**: Prevents `zero-cost state manipulation` attacks
 
@@ -485,7 +472,7 @@ contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard {
 
         _burn(msg.sender, amount);
 
-        // ... rest of withdraw logic unchanged ...
+        // ...
     }
 }
 ```
