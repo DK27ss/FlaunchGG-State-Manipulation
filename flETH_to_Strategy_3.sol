@@ -36,7 +36,7 @@ contract FlETHProfitExtractor {
     IFLETH public constant flETH = IFLETH(0x000000000D564D5be76f7f0d28fE52605afC7Cf8);
     IBalancerVault public constant balancerVault = IBalancerVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
     IWETH public constant WETH = IWETH(0x4200000000000000000000000000000000000006);
-    address public constant BENEFICIARY = 0x161B2CA2f65a4b8bfd4317569b2Fc386CFB2A1A0;
+    address public constant BENEFICIARY = 0x2770;
     uint256 public constant FLASHLOAN_AMOUNT = 100 ether;
     uint256 public constant MAX_CYCLES = 15;
 
