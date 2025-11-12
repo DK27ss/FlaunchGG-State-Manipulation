@@ -30,7 +30,6 @@ A critical `state manipulation` vulnerability has been identified in the `flETH 
 Example transactions demonstrating the vulnerability on Base mainnet:
 - flETH -> Strategy 1/3: [0xaf68a678ce34c55989e76b6688b26a9e76edeb0e349c5e4540f3daa139995b18](https://app.blocksec.com/explorer/tx/base/0xaf68a678ce34c55989e76b6688b26a9e76edeb0e349c5e4540f3daa139995b18)
 - flETH -> Strategy 2/3: [0xe96ecabfaacf9610306626aa192b8ec359cbbcb128283b64145a93fbcbf7b601](https://app.blocksec.com/explorer/tx/base/0xe96ecabfaacf9610306626aa192b8ec359cbbcb128283b64145a93fbcbf7b601)
-- flETH -> Strategy 3/3: [Insert TX hash after execution]
 - Strategy -> flETH 1/1: [0x3f2bf18188b0ac50a8a9dc47a4790bd42064c51a4a74540a240a03ee353ebc47](https://app.blocksec.com/explorer/tx/base/0x3f2bf18188b0ac50a8a9dc47a4790bd42064c51a4a74540a240a03ee353ebc47)
 
 ---
