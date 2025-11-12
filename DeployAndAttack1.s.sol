@@ -13,7 +13,6 @@ contract DeployAndAttack1 is Script {
 
         attacker.executeAttack();
         console.log("SUCCESS!");
-
         console.log("Total extracted:", attacker.totalExtracted());
         console.log("Net profit:", attacker.netProfit());
 
