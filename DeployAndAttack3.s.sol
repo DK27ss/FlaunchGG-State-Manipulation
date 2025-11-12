@@ -13,8 +13,7 @@ contract DeployAndAttack3 is Script {
 
         attacker.executeAttack();
         console.log("SUCCESS!");
-        console.log("Attack executed!");
-        console.log("Profit:", attacker.profit());
+        console.log("Net Profit:", attacker.profit());
 
         vm.stopBroadcast();
     }
