@@ -217,9 +217,10 @@ STATE AFTER:
 **Impact**: flETH `drained` (69 → 69.7 ETH can go to ~0.01 ETH with optimization)
 **DoS**: All withdrawals `forced` through expensive Aave path (6x gas cost)
 
-### Why 90.75% ?
+### why 90.75% ?
 
 Deposit 100%: threshold too high → final balance `79.7 ETH`
+
 Deposit 90.75%: optimal threshold → final balance `69.7 ETH` (lower = better DoS)
 
 ---
