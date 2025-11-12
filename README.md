@@ -78,7 +78,8 @@ forge script script/Deploy_FlETH_to_Strategy_3.s.sol --rpc-url $RPC_URL --privat
 forge script script/Deploy_FlETH_to_Strategy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
 # Verify state change
-cast call 0x000000000D564D5be76f7f0d28fE52605afC7Cf8 "balanceOf(address)" 0x000000000D564D5be76f7f0d28fE52605afC7Cf8 --rpc-url $RPC_URL
+cast balance 0x000000000D564D5be76f7f0d28fE52605afC7Cf8 --rpc-url $RPC_URL
+cast balance 0xd93855bab40a80Df2f8ccaae079F2B73d5eC8527 --rpc-url $RPC_URL
 ```
 
 ### Results
