@@ -409,14 +409,14 @@ User calls withdraw() (sets lock)
 
 ---
 
-### Fix 2 - Flash Loan Protection with Balance Tracking
+### Fix 2 - Flashloan Protection with Balance Tracking
 
 **Impact**: Prevents `zero-cost state manipulation` attacks
 
 ```solidity
 contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard {
 
-    // Add state variables for flash loan detection
+    // Add state variables for flashloan detection
     mapping(address => uint256) private lastDepositBlock;
     mapping(address => uint256) private depositedThisBlock;
     uint256 public constant SAME_BLOCK_WITHDRAW_LIMIT_PCT = 10; // 10%
@@ -430,7 +430,7 @@ contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard {
             ethToDeposit += wethAmount;
         }
 
-        // Track deposits for flash loan detection
+        // Track deposits for flashloan detection
         if (lastDepositBlock[msg.sender] == block.number) {
             depositedThisBlock[msg.sender] += ethToDeposit;
         } else {
@@ -442,13 +442,13 @@ contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard {
     }
 
     function withdraw(uint amount) external override nonReentrant {
-        // FLASH LOAN PROTECTION
+        // FLASHLOAN PROTECTION
         if (lastDepositBlock[msg.sender] == block.number) {
             // User deposited in same block - apply 10% limit
             uint256 maxWithdrawSameBlock = (depositedThisBlock[msg.sender] * SAME_BLOCK_WITHDRAW_LIMIT_PCT) / 100;
             require(
                 amount <= maxWithdrawSameBlock,
-                "Flash loan protection: max 10% withdrawal same block"
+                "Flashloan protection: max 10% withdrawal same block"
             );
         }
 
@@ -460,7 +460,7 @@ contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard {
 ```
 
 ```solidity
-// Flash loan attack (BLOCKED):
+// Flashloan attack (BLOCKED):
 Block N:
 1. Flashloan 100 ETH
 2. deposit(100 ETH)
@@ -470,7 +470,7 @@ Block N:
    → Check: lastDepositBlock == block.number? YES
    → Max allowed: 100 * 10% = 10 ETH
    → Requested: 100 ETH > 10 ETH
-   → ✗ REVERTS: "Flash loan protection"
+   → ✗ REVERTS: "Flashloan protection"
 4. Cannot repay flashloan → Attack fails!
 
 // Legitimate user (ALLOWED):
@@ -488,7 +488,7 @@ While this vulnerability does **not allow direct profit extraction** due to the 
 
 1. **No fund theft possible**: 1:1 ratio protects user deposits
 2. **State manipulation possible**: Can drain/fill contracts at will
-3. **Zero cost attack**: Balancer flash loans are 0% fee
+3. **Zero cost attack**: Balancer flashloans are 0% fee
 4. **DoS potential**: Can disrupt normal operations
 5. **Gas griefing**: Forces expensive operations
 
@@ -510,7 +510,7 @@ Implement `flashloan` protection and `rate limit` before wider adoption. The cur
 - [flETH Bug Bounty](https://docs.flaunch.gg/protocol/bug-bounty)
 - [flETH Documentation](https://flaunch.gg)
 - [Aave V3 Documentation](https://docs.aave.com/developers/v/2.0/)
-- [Balancer Flash Loans](https://docs.balancer.fi/reference/contracts/flash-loans.html)
+- [Balancer Flashloans](https://docs.balancer.fi/reference/contracts/flash-loans.html)
 
 ---
 
