@@ -67,15 +67,15 @@ This rebalancing is triggered on every `deposit()` and `withdraw()` operation ba
 
 ```bash
 # Deploy and execute (flETH -> Strategy)
-forge script script/DeployFlETHToStrategy1.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge script script/Deploy_FlETH_to_Strategy_1.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
-forge script script/DeployFlETHToStrategy2.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge script script/Deploy_FlETH_to_Strategy_2.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
-forge script script/DeployFlETHToStrategy3.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge script script/Deploy_FlETH_to_Strategy_3.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
 # Deploy and execute (Strategy -> flETH)
 
-forge script script/DeployFlETHToStrategy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge script script/Deploy_FlETH_to_Strategy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
 # Verify state change
 cast call 0x000000000D564D5be76f7f0d28fE52605afC7Cf8 "balanceOf(address)" 0x000000000D564D5be76f7f0d28fE52605afC7Cf8 --rpc-url $RPC_URL
