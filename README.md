@@ -56,7 +56,7 @@ This rebalancing is triggered on every `deposit()` and `withdraw()` operation ba
 - Result: flETH.balance drained to `~0.01 ETH`
 - PoC: `FlETHAttackerMainnet_flETH_to_Strategy.sol`
 
-**Vector 2: Reverse Flow Strategy → flETH**
+**Vector 2: Strategy → flETH (Reverse Flow)**
 - Flashloan → deposit → withdraw (forces Strategy withdrawal to flETH)
 - Result: Opposite manipulation
 - PoC: `FlETHAttackerMainnet_Strategy_to_flETH.sol`
