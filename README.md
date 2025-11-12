@@ -219,9 +219,9 @@ STATE AFTER:
 
 ### why 90.75% ?
 
-Deposit 100%: threshold too high → final balance `79.7 ETH`
+Deposit 100% - threshold too high → final balance `79.7 ETH`
 
-Deposit 90.75%: optimal threshold → final balance `69.7 ETH` (lower = better DoS)
+Deposit 90.75% - optimal threshold → final balance `69.7 ETH` (lower = better DoS)
 
 ---
 
