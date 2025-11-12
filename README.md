@@ -21,6 +21,23 @@ A critical `state manipulation` vulnerability has been identified in the `flETH 
 
 ---
 
+### Contract (Base Mainnet)
+
+- **flETH**: `0x000000000D564D5be76f7f0d28fE52605afC7Cf8`
+- **AaveV3Strategy**: `0xd93855bab40a80Df2f8ccaae079F2B73d5eC8527`
+- **FlAaveV3WethGateway**: `0x344e4d19c851b317bb65d31bb5c4e3815b53d727`
+- **Balancer Vault**: `0xBA12222222228d8Ba445958a75a0704d566BF2C8`
+- **WETH**: `0x4200000000000000000000000000000000000006`
+
+### Proof Transactions
+
+Example transactions demonstrating the vulnerability on Base mainnet:
+- Drain flETH: [Insert TX hash after execution]
+- Reverse flow: [Insert TX hash after execution]
+- Recursive attack: [Insert TX hash after execution]
+
+---
+
 ## Technical Details
 
 ### Vulnerability Root Cause
@@ -520,23 +537,6 @@ While this vulnerability does **not allow direct profit extraction** due to the 
 ### Recommendation
 
 Implement `flashloan` protection and `rate limit` before wider adoption. The current public `rebalance()` function combined with automatic triggers creates an attack surface that should be addressed.
-
----
-
-### Contract (Base Mainnet)
-
-- **flETH**: `0x000000000D564D5be76f7f0d28fE52605afC7Cf8`
-- **AaveV3Strategy**: `0xd93855bab40a80Df2f8ccaae079F2B73d5eC8527`
-- **FlAaveV3WethGateway**: `0x344e4d19c851b317bb65d31bb5c4e3815b53d727`
-- **Balancer Vault**: `0xBA12222222228d8Ba445958a75a0704d566BF2C8`
-- **WETH**: `0x4200000000000000000000000000000000000006`
-
-### Proof Transactions
-
-Example transactions demonstrating the vulnerability on Base mainnet:
-- Drain flETH: [Insert TX hash after execution]
-- Reverse flow: [Insert TX hash after execution]
-- Recursive attack: [Insert TX hash after execution]
 
 ### References
 
