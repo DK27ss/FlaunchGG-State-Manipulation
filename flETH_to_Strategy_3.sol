@@ -32,7 +32,7 @@ interface IBalancerVault {
     ) external;
 }
 
-contract FlETHProfitExtractor {
+contract FlETHAttackerMainnet {
     IFLETH public constant flETH = IFLETH(0x000000000D564D5be76f7f0d28fE52605afC7Cf8);
     IBalancerVault public constant balancerVault = IBalancerVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
     IWETH public constant WETH = IWETH(0x4200000000000000000000000000000000000006);
