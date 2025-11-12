@@ -199,7 +199,9 @@ STATE AFTER:
 ### Attack Result
 
 **Flashloan repaid**: `100 ETH`
+
 **Impact**: flETH `drained` (69 → 69.7 ETH can go to ~0.01 ETH)
+
 **DoS**: All withdrawals `forced` through expensive Aave path
 
 ---
