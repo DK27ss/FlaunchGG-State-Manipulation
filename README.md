@@ -1,7 +1,5 @@
 # flETH-AaveV3Strategy State Manipulation
 
-## Executive Summary
-
 A critical `state manipulation` vulnerability has been identified in the `flETH protocol` that allows an attacker to **arbitrarily manipulate the ETH distribution** between the main `flETH` contract and its `AaveV3Strategy` using only a `flashloan`, **without depositing any real funds** into the protocol.
 
 ### Impact
@@ -39,7 +37,7 @@ Example transactions demonstrating the vulnerability on Base mainnet:
 
 ## Details
 
-### Vulnerability Root Cause
+### Root Cause
 
 The `flETH protocol` uses an `automatic rebalancing` mechanism that transfers funds between:
 - **flETH contract** (liquid ETH reserve)
@@ -49,28 +47,23 @@ This rebalancing is triggered on every `deposit()` and `withdraw()` operation ba
 
 **Vector**: An attacker can exploit this mechanism using Balancer `flashloan` to `force` arbitrary `fund movements` between these two contracts without any real economic cost.
 
-### Attack Vectors
+### Vectors
 
-**Vector 1: Drain flETH → Strategy**
+**Drain flETH → Strategy**
 - Flashloan `100 ETH `→ deposit(90.75) → withdraw(90.75)
 - Result: flETH.balance drained to `~0.01 ETH`
-- PoC: `FlETHAttackerMainnet_flETH_to_Strategy.sol`
+- PoC: `FlETHAttackerMainnet_flETH_to_Strategy_*.sol`
 
-**Vector 2: Strategy → flETH (Reverse Flow)**
+**Strategy → flETH** (Reverse Flow)
 - Flashloan → deposit → withdraw (forces Strategy withdrawal to flETH)
 - Result: Opposite manipulation
 - PoC: `FlETHAttackerMainnet_Strategy_to_flETH.sol`
-
-**Vector 3: Recursive Rebalancing**
-- Multiple `deposit/withdraw` cycles with `reentrancy`
-- Result: `5+` forced Aave operations (gas griefing)
-- PoC: `FlETHAttackerMainnet_flETH_to_Strategy_2/3.sol`
 
 ---
 
 ## PoC
 
-### Execute Attack
+### Execute Manipulation
 
 ```bash
 # Deploy and execute (flETH -> Strategy)
@@ -119,16 +112,6 @@ After Attack:
 - Force expensive execution paths
 - potential Sandwich attack
 
-**4. Liquidity Fragmentation**
-- Unpredictable withdrawal source (flETH vs Strategy)
-- Inconsistent gas costs
-- Poor UX
-
-**5. Composability Risk**
-- Breaks integrations with other protocols
-- Could trigger liquidations if used as collateral
-- Disrupts automated strategies
-
 ---
 
 ## why no direct extraction ?
@@ -145,11 +128,11 @@ However, `DoS` & `no reentrancy guard` is still dangerous !
 
 ### Contract Interaction Flow
 
-**Attack Setup**: Flashloan `100 ETH` (Balancer 0% fee) → Unwrap to ETH
+**Exploit**: Flashloan `100 ETH` (Balancer) → Unwrap to ETH
 
 ---
 
-#### Step 1 - deposit(90.75 ETH) - Drain flETH to Strategy
+#### Step 1 - deposit() - Drain flETH to Strategy
 
 ```
 Attacker
@@ -179,7 +162,7 @@ STATE AFTER:
 
 ---
 
-#### Step 2 - withdraw(90.75 flETH) - Pull from Strategy
+#### Step 2 - withdraw() - Pull from Strategy
 
 ```
 Attacker
@@ -215,20 +198,14 @@ STATE AFTER:
 ### Attack Result
 
 **Flashloan repaid**: `100 ETH`
-**Impact**: flETH `drained` (69 → 69.7 ETH can go to ~0.01 ETH with optimization)
-**DoS**: All withdrawals `forced` through expensive Aave path (6x gas cost)
-
-### why 90.75% ?
-
-Deposit 100% - threshold too high → final balance `79.7 ETH`
-
-Deposit 90.75% - optimal threshold → final balance `69.7 ETH` (lower = better DoS)
+**Impact**: flETH `drained` (69 → 69.7 ETH can go to ~0.01 ETH)
+**DoS**: All withdrawals `forced` through expensive Aave path
 
 ---
 
 ## Code Analysis
 
-### Vulnerable Code: flETH.sol
+### flETH.sol
 
 ```solidity
 // Rebalance function (public, no access control)
@@ -266,14 +243,14 @@ function _mintFLETHAndRebalance(address receiver, uint amount) internal {
 }
 ```
 
-**Issue**: The `rebalance()` function is:
+The `rebalance()` function is:
 - `Public` (can be called by anyone)
 - Automatically triggered on `deposits`
 - `No rate` limiting
 - `No cost` for triggering
 - `No protection` against flashloan manipulation
 
-### Attack Contract: FlETHAttackerMainnet_flETH_to_Strategy.sol
+### FlETHAttackerMainnet_flETH_to_Strategy.sol
 
 ```solidity
 function receiveFlashLoan(
@@ -406,7 +383,6 @@ contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard { // ← ADD Reentranc
 }
 ```
 
-**Why this is critical**:
 - **Blocks ALL reentrancy attacks** including `potential future vectors`
 - **Zero impact** on legitimate users
 - **Industry standard** (OpenZeppelin battle-tested)
@@ -480,7 +456,6 @@ contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard {
 }
 ```
 
-**How this prevents the attack**:
 ```solidity
 // Flash loan attack (BLOCKED):
 Block N:
@@ -522,7 +497,6 @@ While this vulnerability does **not allow direct profit extraction** due to the 
 - **Likelihood**: High (easy to execute, no cost)
 - **Exploitability**: Trivial (flashloan + 2 atomic function calls)
 - **User Funds**: Not directly at risk
-- **Protocol Functionality**: Severely impacted
 
 ### Recommendation
 
