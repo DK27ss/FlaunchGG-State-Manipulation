@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import "forge-std/Script.sol";
 import "../src/flETH_to_Strategy_2.sol";
 
-contract DeployAndAttack2 is Script {
+contract flETHtoStrategy2 is Script {
     function run() external {
         vm.startBroadcast();
 
