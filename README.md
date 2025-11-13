@@ -87,11 +87,11 @@ cast balance 0xd93855bab40a80Df2f8ccaae079F2B73d5eC8527 --rpc-url $RPC_URL
 ```
 Before Attack:
 - flETH.balance: 69+ ETH
-- strategy.balance: 704+ ETH
+- strategy.balance: 680+ ETH
 
 After Attack:
 - flETH.balance: 0.01 ETH (drained!)
-- strategy.balance: 786+ ETH (increased)
+- strategy.balance: 704+ ETH (increased)
 ```
 
 ---
