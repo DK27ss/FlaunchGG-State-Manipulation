@@ -189,7 +189,7 @@ Gateway.sol (Line 45-65)
    └─ _safeTransferETH(attacker, 81.675)
 
 STATE AFTER:
-  flETH.balance: 0.01 ETH <-- DRAINED!
+  flETH.balance: 0.01 ETH <-- DRAINED
   strategy.balance: 704 ETH
   totalSupply: 697 ETH
 ```
@@ -211,7 +211,7 @@ STATE AFTER:
 ### flETH.sol
 
 ```solidity
-// Rebalance function (public, no access control)
+// Rebalance function (public & no access control)
 function rebalance() public override {
     if (address(strategy) == address(0) || strategy.isUnwinding()) return;
 
@@ -270,7 +270,6 @@ function receiveFlashLoan(
     // Unwrap WETH -> ETH
     WETH.withdraw(flashAmount);
 
-    // EXPLOITATION:
     // Deposit 90.75% to maximize rebalance
     uint256 depositAmount = (flashAmount * 9075) / 10000;
 
@@ -280,7 +279,7 @@ function receiveFlashLoan(
     // Withdraw immediately
     flETH.withdraw(flETHBalance);
 
-    // Repay flashloan (0 cost!)
+    // Repay flashloan
     WETH.deposit{value: flashAmount}();
     WETH.transfer(address(balancerVault), flashAmount);
 }
@@ -300,13 +299,13 @@ pragma solidity ^0.8.22;
 
 import {Ownable} from '@solady/auth/Ownable.sol';
 import {ERC20} from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import {ReentrancyGuard} from '@openzeppelin/contracts/security/ReentrancyGuard.sol'; // ← ADD THIS
+import {ReentrancyGuard} from '@openzeppelin/contracts/security/ReentrancyGuard.sol'; // <-- Import @openzeppelin/contracts/security/ReentrancyGuard.sol
 
 import {IFLETH} from '@fleth-interfaces/IFLETH.sol';
 import {IFLETHStrategy} from '@fleth-interfaces/IFLETHStrategy.sol';
 import {IWETH} from '@fleth-interfaces/IWETH.sol';
 
-contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard { // ← ADD ReentrancyGuard
+contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard { // <-- Add ReentrancyGuard
     // ...
 
     /**
@@ -325,9 +324,9 @@ contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard { // ← ADD Reentranc
     }
 
     /**
-     * Withdraw ETH by sending in flETH.
+     * Withdraw ETH by sending in flETH
      */
-    function withdraw(uint amount) external override nonReentrant { // ← ADD MODIFIER
+    function withdraw(uint amount) external override nonReentrant { // <-- ADD MODIFIER
         _burn(msg.sender, amount);
 
         uint currentEthBalance = address(this).balance;
@@ -358,7 +357,7 @@ contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard { // ← ADD Reentranc
 
                 strategy.withdrawETH(amount + rawEthRequiredToReachThreshold, address(this));
 
-                // ✓ This line is now SAFE - nonReentrant blocks recursive calls
+                // nonReentrant blocks recursive calls
                 _transferETH(msg.sender, amount);
             }
         } else {
@@ -369,7 +368,7 @@ contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard { // ← ADD Reentranc
     /**
      * Harvest yield from the strategy and send it to our yield recipient
      */
-    function harvest() external override nonReentrant { // ← ADD MODIFIER (defense in depth)
+    function harvest() external override nonReentrant { // <-- ADD MODIFIER (defense in depth)
         uint ethYield = yieldAccumulated();
         uint strategyETHBalance = strategy.balanceInETH();
 
@@ -394,15 +393,15 @@ contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard { // ← ADD Reentranc
 
 **How it works**:
 ```solidity
-// Before fix - Vulnerable:
+// Before fix
 User calls withdraw()
-→ _transferETH(user) triggers user's receive()
+→ _transferETH(user) triggers users receive()
   → User calls withdraw() AGAIN ✓ (succeeds)
     → Potential reentrancy exploits
 
-// After fix - Protected:
+// After fix
 User calls withdraw() // (sets lock)
-→ _transferETH(user) triggers user's receive()
+→ _transferETH(user) triggers users receive()
   → User calls withdraw() AGAIN ✗ (reverts: "ReentrancyGuard: reentrant call")
     → Attack blocked!
 ```
@@ -482,22 +481,22 @@ Block N+1: withdraw(10 ETH)
 
 ## Conclusion
 
-While this vulnerability does **not allow direct profit extraction** due to the protocol's sound `1:1 ratio` mechanism and `yield segregation`, the ability to **manipulate protocol state at zero cost using flash loans** represents a **dangerous severity issue**.
+While this vulnerability does **not allow direct profit extraction** due to the protocol sound `1:1 ratio` mechanism and `yield segregation`, the ability to **manipulate protocol state at zero cost using flash loans** represents a **dangerous severity issue**.
 
 ### Key Takeaways
 
-1. **No fund theft possible**: 1:1 ratio protects user deposits
-2. **State manipulation possible**: Can drain/fill contracts at will
-3. **Zero cost attack**: Balancer flashloans are 0% fee
-4. **DoS potential**: Can disrupt normal operations
-5. **Gas griefing**: Forces expensive operations
+- **No fund theft possible**: 1:1 ratio protects user deposits
+- **State manipulation possible**: Can drain/fill contracts at will
+- **Zero cost attack**: Balancer flashloans are 0% fee
+- **DoS potential**: Can disrupt normal operations
+- **Gas griefing**: Forces expensive operations
 
 ### Severity Justification
 
-**Classification: HIGH**
+**Classification**
 
 - **Impact**: Protocol disruption, DoS, gas griefing
-- **Likelihood**: High (easy to execute, no cost)
+- **Likelihood**: Medium-High (easy to execute, no cost)
 - **Exploitability**: Trivial (flashloan + 2 atomic function calls)
 - **User Funds**: Not directly at risk
 
