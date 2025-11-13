@@ -100,15 +100,14 @@ After Attack:
 
 **1. Denial of Service (DoS)**
 - Drains flETH.balance to ~0.01 ETH
-- Forces all withdrawals through Aave (50k → 300k gas)
+- Forces all withdrawals through Aave
 - Small withdrawals may fail due to insufficient balance
 
-**2. Gas Griefing**
-- Each forced rebalance: ~500k gas wasted
+**2. Potential Gas Griefing**
 - 5 cycles = massive gas
 - Protocol bears the cost
 
-**3. MEV Opportunity**
+**3. Potential MEV**
 - Front-run legitimate transactions
 - Force expensive execution paths
 - potential Sandwich attack
@@ -388,7 +387,6 @@ contract flETH is IFLETH, ERC20, Ownable, ReentrancyGuard { // <-- Add Reentranc
 - **Blocks ALL reentrancy attacks** including `potential future vectors`
 - **Zero impact** on legitimate users
 - **Industry standard** (OpenZeppelin battle-tested)
-- **Gas overhead**: Only ~2,300 gas per call (< $0.01 at current Base prices)
 - **No composability issues**: Users can still integrate with other DeFi protocols
 
 **How it works**:
@@ -470,7 +468,7 @@ Block N:
    → Max allowed: 100 * 10% = 10 ETH
    → Requested: 100 ETH > 10 ETH
    → ✗ REVERTS: "Flashloan protection"
-4. Cannot repay flashloan → Attack fails!
+4. Cannot repay flashloan → Attack fails
 
 // Legitimate user (ALLOWED):
 Block N: deposit(10 ETH)
@@ -488,7 +486,7 @@ While this vulnerability does **not allow direct profit extraction** due to the 
 - **No fund theft possible**: 1:1 ratio protects user deposits
 - **State manipulation possible**: Can drain/fill contracts at will
 - **Zero cost attack**: Balancer flashloans are 0% fee
-- **DoS potential**: Can disrupt normal operations
+- **DoS**: Can disrupt normal operations
 - **Gas griefing**: Forces expensive operations
 
 ### Severity Justification
