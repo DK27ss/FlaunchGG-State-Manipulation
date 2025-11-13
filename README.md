@@ -253,7 +253,7 @@ The `rebalance()` function is:
 - `No cost` for triggering
 - `No protection` against flashloan manipulation
 
-### FlETHAttackerMainnet_flETH_to_Strategy.sol
+### flETH_to_Strategy.sol
 
 ```solidity
 function receiveFlashLoan(
