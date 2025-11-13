@@ -401,7 +401,7 @@ User calls withdraw()
     → Potential reentrancy exploits
 
 // After fix - Protected:
-User calls withdraw() (sets lock)
+User calls withdraw() // (sets lock)
 → _transferETH(user) triggers user's receive()
   → User calls withdraw() AGAIN ✗ (reverts: "ReentrancyGuard: reentrant call")
     → Attack blocked!
