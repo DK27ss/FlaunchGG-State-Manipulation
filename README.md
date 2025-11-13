@@ -482,7 +482,7 @@ Block N+1: withdraw(10 ETH)
 
 ## Conclusion
 
-While this vulnerability does **not allow direct profit extraction** due to the protocol's sound `1:1 ratio` mechanism and `yield segregation`, the ability to **manipulate protocol state at zero cost using flash loans** represents a **HIGH severity issue**.
+While this vulnerability does **not allow direct profit extraction** due to the protocol's sound `1:1 ratio` mechanism and `yield segregation`, the ability to **manipulate protocol state at zero cost using flash loans** represents a **dangerous severity issue**.
 
 ### Key Takeaways
 
