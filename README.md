@@ -494,7 +494,7 @@ While this vulnerability does **not allow direct profit extraction** due to the 
 **Classification**
 
 - **Impact**: Protocol disruption, DoS, gas griefing
-- **Likelihood**: Medium-High (easy to execute, no cost)
+- **Likelihood**: (easy to execute, no cost)
 - **Exploitability**: Trivial (flashloan + 2 atomic function calls)
 - **User Funds**: Not directly at risk
 
