@@ -2,8 +2,6 @@
 
 A critical `state manipulation` vulnerability has been identified in the `flETH protocol` that allows an attacker to **arbitrarily manipulate the ETH distribution** between the main `flETH` contract and its `AaveV3Strategy` using only a `flashloan`, **without depositing any real funds** into the protocol.
 
-### Impact
-
 **Impact**
 - **DoS**: Can drain flETH.balance to ~0.01 ETH, forcing all withdrawals through expensive Aave operations
 - **User Impact**: 6x increase in gas costs for withdrawals (~50k → 300k gas)
