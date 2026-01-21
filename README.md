@@ -96,19 +96,14 @@ After Attack:
 
 ## Attack Impact
 
-**1. Denial of Service (DoS)**
+**Denial of Service (DoS)**
 - Drains flETH.balance to ~0.01 ETH
 - Forces all withdrawals through Aave
 - Small withdrawals may fail due to insufficient balance
 
-**2. Potential Gas Griefing**
+**Gas Griefing**
 - 5 cycles = massive gas
 - Protocol bears the cost
-
-**3. Potential MEV**
-- Front-run legitimate transactions
-- Force expensive execution paths
-- potential Sandwich attack
 
 ---
 
